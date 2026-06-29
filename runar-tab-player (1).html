@@ -101,48 +101,39 @@ let scheduled = [];
    Uses FMSynth for bite and harmonic movement.
 ------------------------------ */
 
-const runar = new Tone.PolySynth(Tone.FMSynth, {
-  maxPolyphony: 6,
-  harmonicity: 1.8,
-  modulationIndex: 6,
-  oscillator: { type: "sine" },
-  modulation: { type: "triangle" },
+const runar = new Tone.PolySynth(Tone.Synth, {
+  maxPolyphony: 10,
+  oscillator: { type: "triangle" },
   envelope: {
-    attack: 0.03,
-    decay: 0.18,
-    sustain: 0.65,
-    release: 2.6
-  },
-  modulationEnvelope: {
-    attack: 0.02,
-    decay: 0.2,
-    sustain: 0.4,
-    release: 1.8
+    attack: 0.22,
+    decay: 0.25,
+    sustain: 0.82,
+    release: 5.8
   }
 });
 
-const runarHighPass = new Tone.Filter({ type: "highpass", frequency: 180, rolloff: -24 });
-const runarMidBite = new Tone.Filter({ type: "peaking", frequency: 1650, Q: 1.1, gain: 4 });
-const runarAir = new Tone.Filter({ type: "highshelf", frequency: 4300, gain: 3.5 });
-const runarSoftDrive = new Tone.Distortion({ distortion: 0.16, wet: 0.28 });
+const runarHighPass = new Tone.Filter({ type: "highpass", frequency: 650, rolloff: -24 });
+const runarMidBite = new Tone.Filter({ type: "peaking", frequency: 1800, Q: 1.1, gain: 3 });
+const runarAir = new Tone.Filter({ type: "highshelf", frequency: 4200, gain: 4 });
+const runarSoftDrive = new Tone.Distortion({ distortion: 0.04, wet: 0.10 });
 
 const runarChorus = new Tone.Chorus({
-  frequency: 0.45,
-  delayTime: 3.2,
-  depth: 0.35,
-  wet: 0.18
+  frequency: 0.8,
+  delayTime: 4.8,
+  depth: 0.75,
+  wet: 0.42
 }).start();
 
 const runarVibrato = new Tone.Vibrato({
-  frequency: 5.2,
-  depth: 0.035,
+  frequency: 4.6,
+  depth: 0.025,
   wet: 0
 });
 
-const runarDelay = new Tone.FeedbackDelay({ delayTime: "8n.", feedback: 0.34, wet: 0.26 });
-const runarReverb = new Tone.Reverb({ decay: 6.5, wet: 0.32 });
-const runarPan = new Tone.Panner(0.28);
-const runarVolume = new Tone.Volume(-8);
+const runarDelay = new Tone.FeedbackDelay({ delayTime: "8n.", feedback: 0.46, wet: 0.48 });
+const runarReverb = new Tone.Reverb({ decay: 12, wet: 0.62 });
+const runarPan = new Tone.Panner(0.34);
+const runarVolume = new Tone.Volume(-5);
 
 runar.chain(
   runarHighPass,
