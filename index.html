@@ -1,0 +1,316 @@
+```html
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Rúnar Tab Player</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+  <style>
+    body {
+      font-family: system-ui;
+      margin: 30px;
+      background: #101114;
+      color: #eee;
+    }
+
+    textarea {
+      width: 100%;
+      height: 300px;
+      background: #1b1d22;
+      color: #eee;
+      padding: 14px;
+      font-family: monospace;
+      font-size: 15px;
+      border: 1px solid #444;
+      border-radius: 8px;
+    }
+
+    button {
+      padding: 10px 16px;
+      margin: 10px 6px 20px 0;
+      cursor: pointer;
+      border: 0;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+
+    .note {
+      color: #aaa;
+      max-width: 850px;
+      line-height: 1.5;
+    }
+
+    .small {
+      color: #888;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Rúnar Tab Player</h1>
+
+  <p class="note">
+    Paste normal guitar tab. This version is tuned for high, ringing, post-rock / Alcest-style lead guitar:
+    clean attack, long sustain, chorus, delay and huge reverb.
+  </p>
+
+  <textarea id="tabInput">Tempo = 72
+Drop C
+
+E|-------------------------------12~~~~-------------------------|
+B|----------7~~~~-------------------------------7---------------|
+G|------9-------------------------------9-----------9-----------|
+D|--------------------------------------------------------------|
+A|----------------------2~~~~----------------0~~~~--------------|
+C|-0~~~~--------0~~~~-------------------------------4~~~~-------|
+
+E|-------------------------------12~~~~-------------------------|
+B|----------7~~~~-------------------------------7---------------|
+G|------9-------------------------------9-----------9-----------|
+D|--------------------------------------------------------------|
+A|----------------------2~~~~----------------0~~~~--------------|
+C|-0~~~~--------0~~~~-------------------------------4~~~~-------|</textarea>
+
+  <br>
+
+  <button onclick="playTab()">▶ Play</button>
+  <button onclick="stopTab()">■ Stop</button>
+
+  <p class="small">
+    Tips: use ~~~~ for longer ringing notes, / or \ for slides, h for hammer-ons, p for pull-offs, and b for bends.
+  </p>
+
+<script>
+/*
+  RÚNAR TAB PLAYER
+  Drop C assumed from high to low:
+  E B G D A C
+
+  This is not a perfect guitar simulator.
+  It is a writing tool for hearing whether a tab feels believable.
+*/
+
+const tuning = {
+  "E": 64,
+  "B": 59,
+  "G": 55,
+  "D": 50,
+  "A": 45,
+  "LOWC": 36
+};
+
+let activeNotes = [];
+
+// Lead guitar: bright, floating, sustained.
+const lead = new Tone.PolySynth(Tone.Synth, {
+  maxPolyphony: 8,
+  oscillator: {
+    type: "triangle"
+  },
+  envelope: {
+    attack: 0.18,
+    decay: 0.3,
+    sustain: 0.85,
+    release: 5.5
+  }
+});
+
+// Gentle pick brightness.
+const sparkle = new Tone.Filter({
+  type: "highpass",
+  frequency: 450,
+  rolloff: -12
+});
+
+// Very light drive, not metal.
+const softDrive = new Tone.Distortion({
+  distortion: 0.06,
+  wet: 0.18
+});
+
+// Chorus = shimmer / width.
+const chorus = new Tone.Chorus({
+  frequency: 1.2,
+  delayTime: 4.2,
+  depth: 0.75,
+  wet: 0.55
+}).start();
+
+// Delay = post-rock trails.
+const delay = new Tone.FeedbackDelay({
+  delayTime: "8n.",
+  feedback: 0.42,
+  wet: 0.38
+});
+
+// Huge reverb = ocean sky cathedral.
+const reverb = new Tone.Reverb({
+  decay: 13,
+  wet: 0.68
+});
+
+// Safety, stops it blasting your ears.
+const compressor = new Tone.Compressor({
+  threshold: -18,
+  ratio: 4,
+  attack: 0.03,
+  release: 0.25
+});
+
+const volume = new Tone.Volume(-8);
+
+lead.chain(
+  sparkle,
+  softDrive,
+  chorus,
+  delay,
+  reverb,
+  compressor,
+  volume,
+  Tone.Destination
+);
+
+function midiToFreq(midi) {
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+function getTempo(tab) {
+  const match = tab.match(/Tempo\s*=\s*(\d+)/i);
+  return match ? parseInt(match[1]) : 72;
+}
+
+function getLineParts(line) {
+  const firstPipe = line.indexOf("|");
+  if (firstPipe === -1) return null;
+
+  const label = line.slice(0, firstPipe).trim().toUpperCase();
+  const content = line.slice(firstPipe + 1);
+
+  return { label, content };
+}
+
+function getBaseMidi(label, lowCUsed) {
+  if (label === "E") return tuning.E;
+  if (label === "B") return tuning.B;
+  if (label === "G") return tuning.G;
+  if (label === "D") return tuning.D;
+  if (label === "A") return tuning.A;
+  if (label === "C") return lowCUsed ? tuning.LOWC : tuning.LOWC;
+  return tuning.LOWC;
+}
+
+function parseTab(tab) {
+  const rawLines = tab.split("\n");
+  const tabLines = rawLines
+    .map(getLineParts)
+    .filter(Boolean);
+
+  const events = [];
+
+  tabLines.forEach((lineObj) => {
+    const label = lineObj.label;
+    const content = lineObj.content;
+    const base = getBaseMidi(label, true);
+
+    for (let i = 0; i < content.length; i++) {
+      const char = content[i];
+
+      if (/\d/.test(char)) {
+        let fretText = char;
+
+        if (/\d/.test(content[i + 1])) {
+          fretText += content[i + 1];
+          i++;
+        }
+
+        const fret = parseInt(fretText);
+        let midi = base + fret;
+        let duration = 0.55;
+        let velocity = 0.55;
+
+        const lookahead = content.slice(i + 1, i + 10);
+
+        // Sustained notes.
+        const sustainMatch = lookahead.match(/~+/);
+        if (sustainMatch) {
+          duration += sustainMatch[0].length * 0.55;
+          velocity = 0.48;
+        }
+
+        // Bend: 12b14 bends toward fret 14.
+        const bendMatch = lookahead.match(/b(\d+)/);
+        if (bendMatch) {
+          const targetFret = parseInt(bendMatch[1]);
+          const bendAmount = targetFret - fret;
+          midi += bendAmount;
+          duration += 0.6;
+          velocity = 0.7;
+        }
+
+        // Hammer-ons and pull-offs are made slightly softer.
+        if (lookahead.includes("h") || lookahead.includes("p")) {
+          duration = 0.35;
+          velocity = 0.45;
+        }
+
+        // Slides are slightly longer.
+        if (lookahead.includes("/") || lookahead.includes("\\")) {
+          duration = 0.75;
+          velocity = 0.5;
+        }
+
+        events.push({
+          time: i,
+          midi,
+          duration,
+          velocity
+        });
+      }
+    }
+  });
+
+  return events.sort((a, b) => a.time - b.time);
+}
+
+async function playTab() {
+  await Tone.start();
+
+  stopTab();
+
+  const tab = document.getElementById("tabInput").value;
+  const tempo = getTempo(tab);
+  const events = parseTab(tab);
+
+  Tone.Transport.bpm.value = tempo;
+
+  // This controls how spaced-out the tab columns feel.
+  const columnTime = 0.055;
+
+  events.forEach(ev => {
+    const scheduled = Tone.Transport.schedule(time => {
+      lead.triggerAttackRelease(
+        midiToFreq(ev.midi),
+        ev.duration,
+        time,
+        ev.velocity
+      );
+    }, ev.time * columnTime);
+
+    activeNotes.push(scheduled);
+  });
+
+  Tone.Transport.start();
+}
+
+function stopTab() {
+  Tone.Transport.stop();
+  Tone.Transport.cancel();
+  activeNotes = [];
+  lead.releaseAll();
+}
+</script>
+</body>
+</html>
+```
