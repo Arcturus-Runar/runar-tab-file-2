@@ -264,15 +264,17 @@ function splitSections(text) {
   return sections;
 }
 
-function getRunarBase(label, stringCounter) {
-  if (label === "D") {
-    return stringCounter.D === 0 ? tunings.runar.D_HIGH : tunings.runar.D_LOW;
-  }
-  if (label === "A") return tunings.runar.A;
-  if (label === "F") return tunings.runar.F;
-  if (label === "C") return tunings.runar.C;
-  if (label === "G") return tunings.runar.G;
-  return undefined;
+function getRunarBase(label, stringIndex) {
+  const runarStringsTopToBottom = [
+    tunings.runar.D_HIGH,
+    tunings.runar.A,
+    tunings.runar.F,
+    tunings.runar.C,
+    tunings.runar.G,
+    tunings.runar.D_LOW
+  ];
+
+  return runarStringsTopToBottom[stringIndex];
 }
 
 /* -----------------------------
@@ -390,8 +392,7 @@ function parseTab(sectionText, playerName) {
     let base;
 
     if (playerName === "RUNAR") {
-      base = getRunarBase(label, runarStringCounter);
-      if (label === "D") runarStringCounter.D++;
+     base = getRunarBase(label, lines.indexOf(line));
     } else if (playerName === "SCOTT") {
       base = tunings.scott[label];
     } else if (playerName === "CHRIS") {
