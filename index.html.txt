@@ -119,9 +119,9 @@ let scheduled = [];
 
 const runar = new Tone.PolySynth(Tone.Synth, {
   maxPolyphony: 10,
-  oscillator: { type: "sine" },
+  oscillator: { type: "triangle" },
   envelope: {
-    attack: 0.32,
+    attack: 0.28,
     decay: 0.25,
     sustain: 0.78,
     release: 7.5
@@ -130,7 +130,7 @@ const runar = new Tone.PolySynth(Tone.Synth, {
 
 const runarHighPass = new Tone.Filter({
   type: "highpass",
-  frequency: 1800,
+  frequency: 850,
   rolloff: -24
 });
 
