@@ -1,33 +1,99 @@
-ARCTURUS SOUND NOTEBOOK
-Runar / Scott / Chris
-Clean notepad version for GitHub upload
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Rúnar Tab Player</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <style>
+    body {
+      font-family: system-ui;
+      margin: 30px;
+      background: #101114;
+      color: #eee;
+    }
 
-============================================================
+    textarea {
+      width: 100%;
+      height: 440px;
+      background: #1b1d22;
+      color: #eee;
+      padding: 14px;
+      font-family: monospace;
+      font-size: 14px;
+      border: 1px solid #444;
+      border-radius: 8px;
+    }
+
+    button {
+      padding: 10px 16px;
+      margin: 10px 6px 20px 0;
+      cursor: pointer;
+      border: 0;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+
+    .note {
+      color: #aaa;
+      max-width: 900px;
+      line-height: 1.5;
+    }
+
+    .hint {
+      color: #777;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Rúnar Tab Player</h1>
+
+  <p class="note">
+    Use section labels: RUNAR, SCOTT, CHRIS. Each section gets its own sound.
+    Rúnar sings and bends. Scott anchors. Chris moves underneath.
+  </p>
+
+<textarea id="tabInput">Tempo = 67
+
 RUNAR
-Lead guitar
-============================================================
+D|------5---0-----------------|------0---3-----------------|------5---0-----------------|------0---3-----------------|
+A|------------2---2---1---2---|------------3---2---3h5-----|------------2---2---1---2---|------------3---2---3h5-----|
+F|----------0----------------0|--0-------------------------|----------0----------------0|--0-------------------------|
+C|----------------------------|--------3----------------5--|----------------------------|--------3----------------4--|
+G|----------------------------|---------------------------|----------------------------|---------------------------|
+D|----------------------------|---------------------------|----------------------------|------------------------5--|
 
-Character:
-- Lead guitar that sings.
-- High, expressive, emotional, volatile.
-- The guitar should feel like a voice rather than rhythm support.
-- Rúnar has wide dynamic range. He can whisper, swell, bend, and suddenly open up.
-- Slides are emotional for him: longer, louder, more vocal.
-- Sustained notes get a tiny vibrato/LFO because he never holds a note completely still.
-- He uses guitar until the guitar has said everything it can. Then violin answers.
+SCOTT
+e|------------------------------------------------------------------------------------------|
+B|--------8~~~~~~~~~~~~----------------8~~~~~~~~~~~~----------------7~~~~~~~~~~~~------------|
+G|-----9---------------9------------7---------------7------------4---------------4----------|
+D|--9----------------------9------9--------------------9------5---------------------5-------|
+A|------------------------------------------------------------------------------------------|
+E|------------------------------------------------------------------------------------------|
 
-Role in Arcturus:
-- Soaring lead guitar.
-- Arpeggios.
-- High melodic phrases.
-- Atmosphere and feeling.
-- Stops playing guitar when violin enters, because Rúnar plays both.
+CHRIS
+G|------------------------------------------------------------------------------------------|
+D|------------------------------------------------------------------------------------------|
+A|----------7~~~~~~~~~~~~~~~~~~~~~~~~~~~~----------------3~~~~~~~~~~~~~~~~~~~~~~~~----------|
+E|--0~~~~~~~~~~~~~~~~~~~~~~~~~~~~----------------3~~~~~~~~~~~~~~~~-----2~~~~~~~~~~~~~~~~----|</textarea>
 
-Synth choice:
-Tone.FMSynth inside Tone.PolySynth.
-This gives more harmonic bite and movement than Tone.Synth.
+  <br>
+  <button onclick="playTab()">▶ Play</button>
+  <button onclick="stopTab()">■ Stop</button>
 
-Code:
+  <p class="hint">
+    Tip: RUNAR uses D G C F A D tuning. SCOTT uses standard guitar. CHRIS uses standard bass.
+  </p>
+
+<script>
+const tunings = {
+  runar: { "D_HIGH": 62, "A": 57, "F": 53, "C": 48, "G": 43, "D_LOW": 38 },
+  scott: { "e": 64, "B": 59, "G": 55, "D": 50, "A": 45, "E": 40 },
+  bass:  { "G": 43, "D": 38, "A": 33, "E": 28 }
+};
+
+let scheduled = [];
 
 const runar = new Tone.PolySynth(Tone.FMSynth, {
   maxPolyphony: 6,
@@ -49,29 +115,10 @@ const runar = new Tone.PolySynth(Tone.FMSynth, {
   }
 });
 
-const runarHighPass = new Tone.Filter({
-  type: "highpass",
-  frequency: 180,
-  rolloff: -24
-});
-
-const runarMidBite = new Tone.Filter({
-  type: "peaking",
-  frequency: 1650,
-  Q: 1.1,
-  gain: 4
-});
-
-const runarAir = new Tone.Filter({
-  type: "highshelf",
-  frequency: 4300,
-  gain: 3.5
-});
-
-const runarSoftDrive = new Tone.Distortion({
-  distortion: 0.16,
-  wet: 0.28
-});
+const runarHighPass = new Tone.Filter({ type: "highpass", frequency: 180, rolloff: -24 });
+const runarMidBite = new Tone.Filter({ type: "peaking", frequency: 1650, Q: 1.1, gain: 4 });
+const runarAir = new Tone.Filter({ type: "highshelf", frequency: 4300, gain: 3.5 });
+const runarSoftDrive = new Tone.Distortion({ distortion: 0.16, wet: 0.28 });
 
 const runarChorus = new Tone.Chorus({
   frequency: 0.45,
@@ -86,17 +133,8 @@ const runarVibrato = new Tone.Vibrato({
   wet: 0
 });
 
-const runarDelay = new Tone.FeedbackDelay({
-  delayTime: "8n.",
-  feedback: 0.34,
-  wet: 0.26
-});
-
-const runarReverb = new Tone.Reverb({
-  decay: 6.5,
-  wet: 0.32
-});
-
+const runarDelay = new Tone.FeedbackDelay({ delayTime: "8n.", feedback: 0.34, wet: 0.26 });
+const runarReverb = new Tone.Reverb({ decay: 6.5, wet: 0.32 });
 const runarPan = new Tone.Panner(0.28);
 const runarVolume = new Tone.Volume(-8);
 
@@ -114,34 +152,6 @@ runar.chain(
   Tone.Destination
 );
 
-
-============================================================
-SCOTT
-Second guitar / rhythm guitar
-============================================================
-
-Character:
-- Darker, warmer, underneath.
-- Scott creates weight without stealing the sky.
-- He wants to play pure heavy metal.
-- He should feel reliable, heavy, blunt and repetitive.
-- He is not there to sing. He is there to hold the ground.
-- Slides are practical for him, not emotional.
-- He should be more consistent dynamically than Rúnar.
-
-Role in Arcturus:
-- Rhythm guitar.
-- Repeated undertones.
-- Power-chord energy.
-- Weight, pressure and tension.
-- He keeps pulling the band toward heavier metal.
-
-Synth choice:
-Tone.Synth inside Tone.PolySynth.
-Max polyphony reduced to 3 so he stays heavy, not fancy.
-
-Code:
-
 const scott = new Tone.PolySynth(Tone.Synth, {
   maxPolyphony: 3,
   oscillator: { type: "sawtooth" },
@@ -153,48 +163,13 @@ const scott = new Tone.PolySynth(Tone.Synth, {
   }
 });
 
-const scottHighPass = new Tone.Filter({
-  type: "highpass",
-  frequency: 90,
-  rolloff: -24
-});
-
-const scottBody = new Tone.Filter({
-  type: "peaking",
-  frequency: 420,
-  Q: 0.9,
-  gain: 3
-});
-
-const scottBite = new Tone.Filter({
-  type: "peaking",
-  frequency: 1250,
-  Q: 1.2,
-  gain: 2.5
-});
-
-const scottLowPass = new Tone.Filter({
-  type: "lowpass",
-  frequency: 2800,
-  rolloff: -24
-});
-
-const scottDrive = new Tone.Distortion({
-  distortion: 0.28,
-  wet: 0.38
-});
-
-const scottDelay = new Tone.FeedbackDelay({
-  delayTime: "16n",
-  feedback: 0.12,
-  wet: 0.08
-});
-
-const scottReverb = new Tone.Reverb({
-  decay: 3.2,
-  wet: 0.18
-});
-
+const scottHighPass = new Tone.Filter({ type: "highpass", frequency: 90, rolloff: -24 });
+const scottBody = new Tone.Filter({ type: "peaking", frequency: 420, Q: 0.9, gain: 3 });
+const scottBite = new Tone.Filter({ type: "peaking", frequency: 1250, Q: 1.2, gain: 2.5 });
+const scottLowPass = new Tone.Filter({ type: "lowpass", frequency: 2800, rolloff: -24 });
+const scottDrive = new Tone.Distortion({ distortion: 0.28, wet: 0.38 });
+const scottDelay = new Tone.FeedbackDelay({ delayTime: "16n", feedback: 0.12, wet: 0.08 });
+const scottReverb = new Tone.Reverb({ decay: 3.2, wet: 0.18 });
 const scottPan = new Tone.Panner(-0.38);
 const scottVolume = new Tone.Volume(-12);
 
@@ -211,33 +186,6 @@ scott.chain(
   Tone.Destination
 );
 
-
-============================================================
-CHRIS
-Bass
-============================================================
-
-Character:
-- Low, round, steady.
-- Chris connects everyone.
-- He should have body and warmth, but also enough finger/pick attack to stop the bass becoming mud.
-- He moves underneath Scott.
-- He is simple, grounded and human.
-- Dynamically, Chris leans into certain beats rather than sounding robotic.
-
-Role in Arcturus:
-- Bass foundation.
-- Movement under the weight.
-- The bridge between Rúnar and Scott.
-- Makes the rhythm breathe without drawing too much attention.
-
-Synth choice:
-Tone.MonoSynth.
-Triangle oscillator for warmth.
-Added finger/pick attack EQ.
-
-Code:
-
 const chris = new Tone.MonoSynth({
   oscillator: { type: "triangle" },
   envelope: {
@@ -248,42 +196,12 @@ const chris = new Tone.MonoSynth({
   }
 });
 
-const chrisHighPass = new Tone.Filter({
-  type: "highpass",
-  frequency: 45,
-  rolloff: -24
-});
-
-const chrisBody = new Tone.Filter({
-  type: "peaking",
-  frequency: 140,
-  Q: 0.8,
-  gain: 4
-});
-
-const chrisFingerNoise = new Tone.Filter({
-  type: "peaking",
-  frequency: 850,
-  Q: 1.1,
-  gain: 2
-});
-
-const chrisAttackEQ = new Tone.Filter({
-  type: "highshelf",
-  frequency: 1800,
-  gain: 1.2
-});
-
-const chrisDrive = new Tone.Distortion({
-  distortion: 0.08,
-  wet: 0.18
-});
-
-const chrisLowPass = new Tone.Filter({
-  type: "lowpass",
-  frequency: 1100,
-  rolloff: -24
-});
+const chrisHighPass = new Tone.Filter({ type: "highpass", frequency: 45, rolloff: -24 });
+const chrisBody = new Tone.Filter({ type: "peaking", frequency: 140, Q: 0.8, gain: 4 });
+const chrisFingerNoise = new Tone.Filter({ type: "peaking", frequency: 850, Q: 1.1, gain: 2 });
+const chrisAttackEQ = new Tone.Filter({ type: "highshelf", frequency: 1800, gain: 1.2 });
+const chrisDrive = new Tone.Distortion({ distortion: 0.08, wet: 0.18 });
+const chrisLowPass = new Tone.Filter({ type: "lowpass", frequency: 1100, rolloff: -24 });
 
 const chrisCompressor = new Tone.Compressor({
   threshold: -24,
@@ -306,17 +224,43 @@ chris.chain(
   Tone.Destination
 );
 
+function midiToFreq(midi) {
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
 
-============================================================
-PLAYER BEHAVIOUR NOTES
-============================================================
+function getTempo(text) {
+  const match = text.match(/Tempo\s*=\s*(\d+)/i);
+  return match ? parseInt(match[1]) : 72;
+}
 
-Dynamic range:
-- Rúnar should have the widest dynamic range.
-- Scott should be steady and consistent.
-- Chris should lean into certain beats.
+function splitSections(text) {
+  const sections = { RUNAR: "", SCOTT: "", CHRIS: "" };
+  let current = null;
 
-Velocity logic:
+  text.split("\n").forEach(line => {
+    const clean = line.trim().toUpperCase();
+
+    if (clean === "RUNAR" || clean === "SCOTT" || clean === "CHRIS") {
+      current = clean;
+      return;
+    }
+
+    if (current) sections[current] += line + "\n";
+  });
+
+  return sections;
+}
+
+function getRunarBase(label, stringCounter) {
+  if (label === "D") {
+    return stringCounter.D === 0 ? tunings.runar.D_HIGH : tunings.runar.D_LOW;
+  }
+  if (label === "A") return tunings.runar.A;
+  if (label === "F") return tunings.runar.F;
+  if (label === "C") return tunings.runar.C;
+  if (label === "G") return tunings.runar.G;
+  return undefined;
+}
 
 function humanVariation(seed, amount) {
   const x = Math.sin(seed * 999) * 10000;
@@ -341,19 +285,6 @@ function getBaseVelocity(playerName, column) {
 
   return 0.5;
 }
-
-
-Technique personality:
-- Sustain for Rúnar = vibrato and emotional hold.
-- Sustain for Scott = longer note, less expression.
-- Sustain for Chris = ringing bass note.
-- Slide for Rúnar = expressive, longer, louder.
-- Slide for Scott = practical shift, barely changed.
-- Slide for Chris = gentle movement.
-- Bend for Rúnar = emotional peak, vibrato.
-- Bend for Scott = small emphasis.
-
-Code:
 
 function shapeEventForTechnique(event, playerName) {
   if (event.isSustain) {
@@ -425,16 +356,128 @@ function shapeEventForTechnique(event, playerName) {
   return event;
 }
 
+function parseTab(sectionText, playerName) {
+  const lines = sectionText.split("\n").filter(l => l.includes("|"));
+  const events = [];
+  const runarStringCounter = { D: 0 };
 
-============================================================
-SHORT VERSION
-============================================================
+  lines.forEach(line => {
+    const label = line.slice(0, line.indexOf("|")).trim();
+    const content = line.slice(line.indexOf("|") + 1);
 
-Rúnar:
-Lead guitar. FMSynth. Wide dynamic range. Expressive slides. Vibrato on sustained notes. Sings rather than riffs.
+    let base;
 
-Scott:
-Rhythm guitar. Max polyphony 3. Sawtooth. Heavy, warm, consistent. Practical slides. Repetition and weight.
+    if (playerName === "RUNAR") {
+      base = getRunarBase(label, runarStringCounter);
+      if (label === "D") runarStringCounter.D++;
+    } else if (playerName === "SCOTT") {
+      base = tunings.scott[label];
+    } else if (playerName === "CHRIS") {
+      base = tunings.bass[label];
+    }
 
-Chris:
-Bass. MonoSynth. Triangle. Warm low body plus finger/pick attack. Steady movement underneath everyone.
+    if (base === undefined) return;
+
+    for (let i = 0; i < content.length; i++) {
+      if (/\d/.test(content[i])) {
+        let fretText = content[i];
+
+        if (/\d/.test(content[i + 1])) {
+          fretText += content[i + 1];
+          i++;
+        }
+
+        const fret = parseInt(fretText);
+        const lookahead = content.slice(i + 1, i + 14);
+
+        const sustainMatch = lookahead.match(/~+/);
+        const bendMatch = lookahead.match(/b(\d+)/);
+
+        const event = {
+          time: i,
+          midi: base + fret,
+          duration: playerName === "CHRIS" ? 1.05 : 0.5,
+          velocity: getBaseVelocity(playerName, i),
+          isSustain: Boolean(sustainMatch),
+          isSlide: lookahead.includes("/") || lookahead.includes("\\"),
+          isHammerPull: lookahead.includes("h") || lookahead.includes("p"),
+          isBend: Boolean(bendMatch),
+          vibrato: false
+        };
+
+        if (sustainMatch) {
+          event.duration += sustainMatch[0].length * 0.18;
+        }
+
+        if (bendMatch) {
+          event.midi += parseInt(bendMatch[1]) - fret;
+        }
+
+        events.push(shapeEventForTechnique(event, playerName));
+      }
+    }
+  });
+
+  return events.sort((a, b) => a.time - b.time);
+}
+
+async function playTab() {
+  await Tone.start();
+  stopTab();
+
+  const text = document.getElementById("tabInput").value;
+  const tempo = getTempo(text);
+  const sections = splitSections(text);
+
+  Tone.Transport.bpm.value = tempo;
+
+  const columnTime = 0.055;
+
+  const tracks = [
+    { name: "RUNAR", synth: runar, events: parseTab(sections.RUNAR, "RUNAR") },
+    { name: "SCOTT", synth: scott, events: parseTab(sections.SCOTT, "SCOTT") },
+    { name: "CHRIS", synth: chris, events: parseTab(sections.CHRIS, "CHRIS") }
+  ];
+
+  tracks.forEach(track => {
+    track.events.forEach(ev => {
+      const id = Tone.Transport.schedule(time => {
+        if (track.name === "RUNAR") {
+          if (ev.vibrato) {
+            runarVibrato.wet.setValueAtTime(0.18, time + 0.08);
+            runarVibrato.wet.linearRampToValueAtTime(0, time + ev.duration);
+          } else {
+            runarVibrato.wet.setValueAtTime(0, time);
+          }
+        }
+
+        track.synth.triggerAttackRelease(
+          midiToFreq(ev.midi),
+          ev.duration,
+          time,
+          ev.velocity
+        );
+      }, ev.time * columnTime);
+
+      scheduled.push(id);
+    });
+  });
+
+  Tone.Transport.start();
+}
+
+function stopTab() {
+  Tone.Transport.stop();
+  Tone.Transport.cancel();
+
+  scheduled = [];
+
+  runar.releaseAll();
+  scott.releaseAll();
+  chris.triggerRelease();
+
+  runarVibrato.wet.value = 0;
+}
+</script>
+</body>
+</html>
