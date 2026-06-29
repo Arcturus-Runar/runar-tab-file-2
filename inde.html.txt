@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Rúnar Tab Player</title>
+  <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@latest/dist/alphaTab.js"></script>
+  <style>
+    body { font-family: system-ui; margin: 30px; background: #111; color: #eee; }
+    textarea { width: 100%; height: 220px; background: #1e1e1e; color: #eee; padding: 12px; }
+    button { padding: 10px 16px; margin: 8px 4px 18px 0; }
+    #alphaTab { background: white; padding: 20px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Rúnar Tab Player</h1>
+
+  <textarea id="tabInput">
+\title "Volcanoes"
+\artist "Rúnar"
+\tempo 82
+.
+:4 0.6 0.6 0.6 0.6 | 0.6 0.6 3.5 5.6 |
+  </textarea>
+
+  <br>
+  <button onclick="loadTab()">Load Tab</button>
+  <button onclick="api.playPause()">Play / Pause</button>
+
+  <div id="alphaTab"></div>
+
+  <script>
+    const element = document.getElementById('alphaTab');
+
+    const api = new alphaTab.AlphaTabApi(element, {
+      core: {
+        tex: true
+      },
+      player: {
+        enablePlayer: true,
+        soundFont: 'https://cdn.jsdelivr.net/npm/@coderline/alphatab@latest/dist/soundfont/sonivox.sf2'
+      }
+    });
+
+    function loadTab() {
+      const text = document.getElementById('tabInput').value;
+      api.tex(text);
+    }
+
+    loadTab();
+  </script>
+</body>
+</html>
