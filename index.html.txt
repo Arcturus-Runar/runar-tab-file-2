@@ -118,57 +118,64 @@ let scheduled = [];
 ------------------------------ */
 
 const runar = new Tone.PolySynth(Tone.Synth, {
-  maxPolyphony: 10,
-  oscillator: { type: "triangle" },
+  maxPolyphony: 6,
+  oscillator: { type: "sawtooth" },
   envelope: {
-    attack: 0.28,
-    decay: 0.25,
-    sustain: 0.78,
-    release: 7.5
+    attack: 0.035,
+    decay: 0.18,
+    sustain: 0.62,
+    release: 2.8
   }
 });
 
 const runarHighPass = new Tone.Filter({
   type: "highpass",
-  frequency: 850,
+  frequency: 180,
   rolloff: -24
 });
 
 const runarAir = new Tone.Filter({
   type: "highshelf",
-  frequency: 5200,
-  gain: 7
+  frequency: 4300,
+  gain: 3.5
+});
+
+const runarMidBite = new Tone.Filter({
+  type: "peaking",
+  frequency: 1650,
+  Q: 1.1,
+  gain: 4
 });
 
 const runarSoftDrive = new Tone.Distortion({
-  distortion: 0.01,
-  wet: 0.05
+  distortion: 0.16,
+  wet: 0.28
 });
 
 const runarChorus = new Tone.Chorus({
-  frequency: 0.85,
-  delayTime: 5.5,
-  depth: 0.9,
-  wet: 0.55
+  frequency: 0.45,
+  delayTime: 3.2,
+  depth: 0.35,
+  wet: 0.18
 }).start();
 
 const runarDelay = new Tone.FeedbackDelay({
   delayTime: "8n.",
-  feedback: 0.52,
-  wet: 0.58
+  feedback: 0.34,
+  wet: 0.26
 });
 
 const runarReverb = new Tone.Reverb({
-  decay: 16,
-  wet: 0.78
+  decay: 6.5,
+  wet: 0.32
 });
 
-const runarPan = new Tone.Panner(0.35);
-
-const runarVolume = new Tone.Volume(-10);
+const runarPan = new Tone.Panner(0.28);
+const runarVolume = new Tone.Volume(-8);
 
 runar.chain(
   runarHighPass,
+  runarMidBite,
   runarAir,
   runarSoftDrive,
   runarChorus,
@@ -180,83 +187,135 @@ runar.chain(
 );
 
 /* -----------------------------
-   SCOTT
-   Darker, warmer, underneath.
-   He should create space without stealing the sky.
------------------------------- */
-
+ 
 const scott = new Tone.PolySynth(Tone.Synth, {
-  maxPolyphony: 8,
-  oscillator: { type: "triangle" },
+  maxPolyphony: 5,
+  oscillator: { type: "sawtooth" },
   envelope: {
-    attack: 0.30,
-    decay: 0.35,
-    sustain: 0.75,
-    release: 5
+    attack: 0.015,
+    decay: 0.12,
+    sustain: 0.42,
+    release: 1.4
   }
+});
+
+const scottHighPass = new Tone.Filter({
+  type: "highpass",
+  frequency: 90,
+  rolloff: -24
 });
 
 const scottLowPass = new Tone.Filter({
   type: "lowpass",
-  frequency: 1600,
+  frequency: 2800,
   rolloff: -24
 });
 
+const scottBody = new Tone.Filter({
+  type: "peaking",
+  frequency: 420,
+  Q: 0.9,
+  gain: 3
+});
+
+const scottBite = new Tone.Filter({
+  type: "peaking",
+  frequency: 1250,
+  Q: 1.2,
+  gain: 2.5
+});
+
 const scottDrive = new Tone.Distortion({
-  distortion: 0.06,
-  wet: 0.12
+  distortion: 0.28,
+  wet: 0.38
+});
+
+const scottDelay = new Tone.FeedbackDelay({
+  delayTime: "16n",
+  feedback: 0.12,
+  wet: 0.08
 });
 
 const scottReverb = new Tone.Reverb({
-  decay: 6,
-  wet: 0.36
+  decay: 3.2,
+  wet: 0.18
 });
 
-const scottPan = new Tone.Panner(-0.35);
-
-const scottVolume = new Tone.Volume(-14);
+const scottPan = new Tone.Panner(-0.38);
+const scottVolume = new Tone.Volume(-12);
 
 scott.chain(
+  scottHighPass,
+  scottBody,
+  scottBite,
   scottLowPass,
   scottDrive,
+  scottDelay,
   scottReverb,
   scottPan,
   scottVolume,
   Tone.Destination
+
 );
 
 /* -----------------------------
-   CHRIS
-   Low, round, steady.
------------------------------- */
 
-const chris = new Tone.MonoSynth({
-  oscillator: { type: "sine" },
+  const chris = new Tone.MonoSynth({
+  oscillator: { type: "triangle" },
   envelope: {
-    attack: 0.08,
-    decay: 0.4,
-    sustain: 0.82,
-    release: 3
+    attack: 0.018,
+    decay: 0.18,
+    sustain: 0.68,
+    release: 1.6
   }
+});
+
+const chrisHighPass = new Tone.Filter({
+  type: "highpass",
+  frequency: 45,
+  rolloff: -24
 });
 
 const chrisLowPass = new Tone.Filter({
   type: "lowpass",
-  frequency: 700,
+  frequency: 1100,
   rolloff: -24
 });
 
-const chrisCompressor = new Tone.Compressor({
-  threshold: -20,
-  ratio: 5,
-  attack: 0.03,
-  release: 0.25
+const chrisBody = new Tone.Filter({
+  type: "peaking",
+  frequency: 140,
+  Q: 0.8,
+  gain: 4
 });
 
-const chrisVolume = new Tone.Volume(-8);
+const chrisFingerNoise = new Tone.Filter({
+  type: "peaking",
+  frequency: 850,
+  Q: 1.1,
+  gain: 2
+});
+
+const chrisDrive = new Tone.Distortion({
+  distortion: 0.08,
+  wet: 0.18
+});
+
+const chrisCompressor = new Tone.Compressor({
+  threshold: -24,
+  ratio: 6,
+  attack: 0.012,
+  release: 0.18
+});
+
+const chrisVolume = new Tone.Volume(-7);
 
 chris.chain(
+  chrisHighPass,
+  chrisBody,
+  chrisFingerNoise,
   chrisLowPass,
+  chrisDrive,
   chrisCompressor,
   chrisVolume,
   Tone.Destination
