@@ -3,50 +3,113 @@
 <head>
   <meta charset="utf-8">
   <title>Rúnar Tab Player</title>
-  <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@latest/dist/alphaTab.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
   <style>
     body { font-family: system-ui; margin: 30px; background: #111; color: #eee; }
-    textarea { width: 100%; height: 220px; background: #1e1e1e; color: #eee; padding: 12px; }
-    button { padding: 10px 16px; margin: 8px 4px 18px 0; }
-    #alphaTab { background: white; padding: 20px; border-radius: 8px; }
+    textarea { width: 100%; height: 260px; background: #1e1e1e; color: #eee; padding: 12px; font-family: monospace; }
+    button { padding: 10px 16px; margin: 8px 4px 18px 0; cursor: pointer; }
+    .note { color: #aaa; }
   </style>
 </head>
 <body>
   <h1>Rúnar Tab Player</h1>
+  <p class="note">Paste normal guitar tab. Drop C assumed: D A F C G C from top to bottom.</p>
 
-  <textarea id="tabInput">
-\title "Volcanoes"
-\artist "Rúnar"
-\tempo 82
-.
-:4 0.6 0.6 0.6 0.6 | 0.6 0.6 3.5 5.6 |
-  </textarea>
+  <textarea id="tabInput">F|-------------------------14b17~~~~---------------------|
+C|------------12-13-12----------------------13p12--------|
+G|------10h12--------------------------------------15\---|
+C|-0-0---------------------------------------------------|</textarea>
 
   <br>
-  <button onclick="loadTab()">Load Tab</button>
-  <button onclick="api.playPause()">Play / Pause</button>
+  <button onclick="playTab()">▶ Play</button>
+  <button onclick="Tone.Transport.stop()">■ Stop</button>
 
-  <div id="alphaTab"></div>
+<script>
+const tuning = {
+  "D": 50,
+  "A": 45,
+  "F": 41,
+  "C": 36,
+  "G": 31,
+  "LOWC": 24
+};
 
-  <script>
-    const element = document.getElementById('alphaTab');
+const synth = new Tone.MonoSynth({
+  oscillator: { type: "sawtooth" },
+  envelope: { attack: 0.01, decay: 0.2, sustain: 0.25, release: 0.8 },
+  filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.2, release: 1 }
+}).chain(
+  new Tone.Distortion(0.75),
+  new Tone.FeedbackDelay("8n", 0.25),
+  new Tone.Reverb(4),
+  Tone.Destination
+);
 
-    const api = new alphaTab.AlphaTabApi(element, {
-      core: {
-        tex: true
-      },
-      player: {
-        enablePlayer: true,
-        soundFont: 'https://cdn.jsdelivr.net/npm/@coderline/alphatab@latest/dist/soundfont/sonivox.sf2'
+function midiToFreq(midi) {
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+function parseTab(tab) {
+  const lines = tab.split("\n").filter(l => l.includes("|"));
+  const events = [];
+
+  lines.forEach((line, stringIndex) => {
+    const label = line.split("|")[0].trim();
+    const content = line.split("|")[1] || "";
+
+    let base;
+    if (label === "D") base = tuning.D;
+    else if (label === "A") base = tuning.A;
+    else if (label === "F") base = tuning.F;
+    else if (label === "C" && stringIndex === lines.length - 1) base = tuning.LOWC;
+    else if (label === "C") base = tuning.C;
+    else if (label === "G") base = tuning.G;
+    else base = tuning.LOWC;
+
+    for (let i = 0; i < content.length; i++) {
+      if (/\d/.test(content[i])) {
+        let fret = content[i];
+        if (/\d/.test(content[i + 1])) {
+          fret += content[i + 1];
+          i++;
+        }
+
+        const next = content.slice(i + 1, i + 5);
+        let bend = 0;
+
+        if (next.includes("b")) {
+          const match = next.match(/b(\d+)/);
+          if (match) bend = parseInt(match[1]) - parseInt(fret);
+        }
+
+        events.push({
+          time: i * 0.09,
+          midi: base + parseInt(fret) + bend,
+          duration: next.includes("~") ? 0.8 : 0.18
+        });
       }
-    });
-
-    function loadTab() {
-      const text = document.getElementById('tabInput').value;
-      api.tex(text);
     }
+  });
 
-    loadTab();
-  </script>
+  return events.sort((a, b) => a.time - b.time);
+}
+
+async function playTab() {
+  await Tone.start();
+  Tone.Transport.stop();
+  Tone.Transport.cancel();
+
+  const tab = document.getElementById("tabInput").value;
+  const events = parseTab(tab);
+
+  events.forEach(ev => {
+    Tone.Transport.schedule(time => {
+      synth.triggerAttackRelease(midiToFreq(ev.midi), ev.duration, time);
+    }, ev.time);
+  });
+
+  Tone.Transport.start();
+}
+</script>
 </body>
 </html>
